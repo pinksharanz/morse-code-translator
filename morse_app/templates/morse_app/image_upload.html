@@ -1,0 +1,134 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Image to Morse Code</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1b1b2f, #162447);
+      font-family: 'Inter', sans-serif;
+      color: white;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+      padding: 3rem 2rem;
+      max-width: 750px;
+      margin: 4% auto;
+    }
+    .output-box {
+      background-color: #0f172a;
+      padding: 1.5rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      margin-top: 1rem;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      min-height: 90px;
+    }
+    .btn {
+      background: linear-gradient(135deg, #a78bfa, #7c3aed);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    .btn:hover {
+      box-shadow: 0px 4px 20px rgba(139, 92, 246, 0.6);
+    }
+  </style>
+</head>
+<body>
+  <div class="glass space-y-8">
+    <h2 class="text-3xl font-bold text-center flex justify-center items-center gap-2">
+      <i data-lucide="scan-line" class="w-7 h-7"></i>
+      Image to Morse Code Translation
+    </h2>
+
+    <form id="uploadForm" enctype="multipart/form-data" method="post" class="text-center space-y-4">
+      {% csrf_token %}
+      <div>
+        <label for="imageInput" class="block text-lg mb-2">🖼️ Upload Image File:</label>
+        <input type="file" id="imageInput" name="image" accept="image/*" class="text-white" required>
+      </div>
+      <button type="submit" class="btn mx-auto">
+        <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+        Extract Text
+      </button>
+    </form>
+
+    <div>
+      <h3 class="text-lg font-semibold mb-2">🧾 Extracted Text:</h3>
+      <div id="extractedText" class="output-box"></div>
+    </div>
+
+    <div>
+      <h3 class="text-lg font-semibold mb-2">· − · − Morse Code:</h3>
+      <div id="morseCode" class="output-box"></div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    document.getElementById("uploadForm").addEventListener("submit", function (event) {
+      event.preventDefault();
+      const formData = new FormData();
+      const file = document.getElementById("imageInput").files[0];
+      if (!file) return;
+
+      formData.append("image", file);
+
+      fetch("/extract_text/", {
+        method: "POST",
+        headers: { "X-CSRFToken": csrftoken },
+        body: formData,
+      })
+      .then((response) => response.json())
+      .then((data) => {
+        const extractedTextBox = document.getElementById("extractedText");
+        const morseCodeBox = document.getElementById("morseCode");
+
+        if (data.error) {
+          extractedTextBox.innerText = "Error: " + data.error;
+          morseCodeBox.innerText = "";
+        } else {
+          extractedTextBox.innerText = data.text;
+          morseCodeBox.innerText = data.morse;
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+    });
+  </script>
+</body>
+</html>

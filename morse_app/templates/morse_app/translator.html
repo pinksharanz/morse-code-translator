@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Morse Code Translator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+    body {
+      background: linear-gradient(135deg, #1b1b2f, #162447);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(15px);
+      border-radius: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 20px;
+      box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    .output-box {
+      background: linear-gradient(135deg, #1b1b2f, #162447);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 0.9rem;
+      text-align: left;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-top: 6px;
+      width: 100%;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .btn {
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0px 5px 20px rgba(139, 92, 246, 0.5);
+    }
+    .copy-message {
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+    }
+    .copy-message.visible {
+      opacity: 1;
+    }
+    .error-message {
+      color: #ef4444;
+      font-weight: bold;
+      display: none;
+      transition: opacity 0.3s ease-in-out;
+    }
+  </style>
+</head>
+<body class="flex flex-col justify-center items-center min-h-screen p-6">
+
+  <h2 class="text-3xl font-bold mb-6">🔡 Morse Code Translator</h2>
+
+  <div class="glass max-w-md w-full p-6">
+    <div class="mb-5">
+      <label class="block font-medium mb-1">Enter Text:</label>
+      <textarea id="textInput" placeholder="Type here..."
+        class="w-full resize-none h-24 rounded-md p-2 bg-gray-800 text-white placeholder-gray-400 border border-gray-600">
+      </textarea>
+      <p id="errorMessage" class="error-message mt-2"></p>
+
+      <p class="text-xs text-gray-400 mt-3">Morse Code:</p>
+      <div class="output-box">
+        <p id="morseOutput" class="text-md font-semibold"></p>
+      </div>
+    </div>
+
+    <button id="copyButton" class="btn w-full mt-3">Copy Morse Code</button>
+    <p id="copyMessage" class="copy-message text-green-400 text-sm mt-2">✅ Copied!</p>
+  </div>
+
+  <div class="glass max-w-md w-full p-6 mt-6">
+    <label class="block font-medium mb-1">Enter Morse Code:</label>
+    <input type="text" id="morseInput" placeholder="... --- ..."
+      class="w-full rounded-md p-2 bg-gray-800 text-white placeholder-gray-400 border border-gray-600"/>
+
+    <p class="text-xs text-gray-400 mt-3">Decoded Text:</p>
+    <div class="output-box">
+      <p id="decodedOutput" class="text-md font-semibold"></p>
+    </div>
+  </div>
+
+  <script>
+    const morseDict = {
+      'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
+      'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+      'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
+      'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+      'Y': '-.--', 'Z': '--..', '1': '.----', '2': '..---', '3': '...--',
+      '4': '....-', '5': '.....', '6': '-....', '7': '--...', '8': '---..',
+      '9': '----.', '0': '-----', ' ': ' / ',
+      '.': '.-.-.-', ',': '--..--', '?': '..--..', "'": '.----.', '!': '-.-.--',
+      '/': '-..-.', '(': '-.--.', ')': '-.--.-', '&': '.-...', ':': '---...',
+      ';': '-.-.-.', '=': '-...-', '+': '.-.-.', '-': '-....-', '_': '..--.-',
+      '"': '.-..-.', '@': '.--.-.'
+    };
+
+    const reverseMorseDict = Object.fromEntries(
+      Object.entries(morseDict).map(([key, value]) => [value, key])
+    );
+
+    document.getElementById("textInput").addEventListener("input", function () {
+      let inputText = this.value.toUpperCase();
+      let morseCode = [];
+      let unsupportedChars = [];
+
+      for (let char of inputText) {
+        if (morseDict[char]) {
+          morseCode.push(morseDict[char]);
+        } else if (char.trim() !== '') {
+          unsupportedChars.push(char);
+        }
+      }
+
+      document.getElementById("morseOutput").innerText = morseCode.join(" ");
+
+      let errorMsg = document.getElementById("errorMessage");
+      if (unsupportedChars.length > 0) {
+        errorMsg.style.display = "block";
+        errorMsg.innerText = "❌ Unsupported: " + unsupportedChars.join(", ");
+      } else {
+        errorMsg.style.display = "none";
+      }
+    });
+
+    document.getElementById("morseInput").addEventListener("input", function () {
+      let morseCode = this.value.trim().split(" ");
+      let decodedText = morseCode.map(code => reverseMorseDict[code] || "").join(" ");
+      document.getElementById("decodedOutput").innerText = decodedText;
+    });
+
+    document.getElementById("copyButton").addEventListener("click", function () {
+      let morseText = document.getElementById("morseOutput").innerText;
+      if (!morseText.trim()) return;
+      navigator.clipboard.writeText(morseText);
+
+      let copyMessage = document.getElementById("copyMessage");
+      copyMessage.classList.add("visible");
+      setTimeout(() => copyMessage.classList.remove("visible"), 2000);
+    });
+  </script>
+</body>
+</html>
